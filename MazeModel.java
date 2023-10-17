@@ -39,43 +39,42 @@ public class MazeModel implements Runnable {
 
 					int state = judgeState(x, y);
 					double epsilon = 0.5;
-					int action = q1.selectAction(state, epsilon);
+					int action = q1.selectAction(state, epsilon, mazeData, x, y);
 					/* 選択した行動を実行 (ロボットを移動する) */
 					judgeAction(action, robot);
 					/* 新しい状態を観測＆報酬を得る */
 					int after = judgeState(x, y);
-					int reward = judgeReward(x,y);
+					int reward = judgeReward(x, y);
 					/* Q 値を更新 */
 					q1.update(state, action, after, reward);
 					/* もし時間差分誤差が十分小さくなれば終了 */
 					if (reward == q1.getQTable(after, action))
 						break;
 				}
-				// step 2: 学習したQテーブルの最適政策に基づいて
-				// スタート位置からゴール位置まで移動
-				/* ロボットを初期位置に戻す */
-				robot.setX(mazeData.getSX());
-				robot.setY(mazeData.getSY());
-				// ゴール座標の取得
-				int gx = mazeData.getGX();
-				int gy = mazeData.getGY();
-				while (true) {
-					int x = robot.getX();
-					int y = robot.getY();
-					// ロボットの位置座標を更新
-					judgeAction(q1.selectAction(judgeState(x, y)), robot);
-					// 現在の状態を描画する
-					mazeView.repaint();
-					// 速すぎるので 500msec 寝る
-					Thread.sleep(500);
-					// もしゴールに到達すれば終了
-					if (x == gx && y == gy)
-						break;
-					// デバッグ用に現在位置を出力
-					System.out.println("x = " + x + ", y = " + y);
-				}
 			}
-
+			// step 2: 学習したQテーブルの最適政策に基づいて
+			// スタート位置からゴール位置まで移動
+			/* ロボットを初期位置に戻す */
+			robot.setX(mazeData.getSX());
+			robot.setY(mazeData.getSY());
+			// ゴール座標の取得
+			int gx = mazeData.getGX();
+			int gy = mazeData.getGY();
+			while (true) {
+				int x = robot.getX();
+				int y = robot.getY();
+				// ロボットの位置座標を更新
+				judgeAction(q1.selectAction(judgeState(x, y)), robot);
+				// 現在の状態を描画する
+				mazeView.repaint();
+				// 速すぎるので 500msec 寝る
+				Thread.sleep(500);
+				// もしゴールに到達すれば終了
+				if (x == gx && y == gy)
+					break;
+				// デバッグ用に現在位置を出力
+//					System.out.println("x = " + x + ", y = " + y);
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			System.exit(-1);
@@ -92,23 +91,38 @@ public class MazeModel implements Runnable {
 			right = 1;
 		if (mazeData.get(x - 1, y) == MazeData.BLOCK)
 			left = 1;
+
+		if (mazeData.get(x, y) == MazeData.BLOCK)
+			return -10;
 		
-		if(right == 1 && down == 1)
+		int gx = mazeData.getGX();
+		int gy = mazeData.getGY();
+		
+//		int num;
+		if (right == 1 && down == 1)
 			return -1;
-		if(right + left + down + up >= 3)
-			return -2;
+		if (right + left + down + up >= 3)
+			return -5;
 		
-		return 1;
+		return 10 / ((int) Math.sqrt(Math.pow(gx-x,2)+Math.pow(gy-y,2)) + 1);
+
 		
+//			if (right == 1 && down == 1)
+//				return 2;
+//		if (right + left + down + up >= 3)
+//			return 1;
+//
+//		return 3;
+
 	}
 
 	private void judgeAction(int action, Robot robot) {
-		if (action == 0)
-			robot.setY(robot.getY() - 1);
-		if (action == 1)
-			robot.setY(robot.getY() + 1);
 		if (action == 2)
 			robot.setX(robot.getX() + 1);
+		if (action == 1)
+			robot.setY(robot.getY() + 1);
+		if (action == 0)
+			robot.setY(robot.getY() - 1);
 		if (action == 3)
 			robot.setX(robot.getX() - 1);
 	}

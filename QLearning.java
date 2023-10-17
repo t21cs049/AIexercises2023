@@ -1,3 +1,4 @@
+
 /**
  * Ｑ学習を行うクラス
  */
@@ -23,19 +24,75 @@ public class QLearning {
 	/**
 	 * epsilon-Greedy 法により行動を選択する
 	 * 
-	 * @param state   現在の状態
-	 * @param epsilon ランダムに行動を選択する確率（0.0〜1.0）
+	 * @param state    現在の状態
+	 * @param epsilon  ランダムに行動を選択する確率（0.0〜1.0）
+	 * @param mazeData
+	 * @param y
+	 * @param x
 	 * @return 選択された行動番号
 	 */
-	public int selectAction(int state, double epsilon) {
+	public int selectAction(int state, double epsilon, MazeData mazeData, int x, int y) {
+
 		int max = 0;
 		for (int i = 1; i < qTable[state].length; i++) {
-			if (qTable[state][i] > qTable[state][max]) {
-				max = i;
+			if (qTable[state][i] >= qTable[state][max]) {
+				if (judgeBlockByAction(i, mazeData, x, y))
+					max = i;
 			}
 		}
-		//100*epsilonで１〜１００の乱数と比べる。
-		return max;
+		// 100*epsilonで１〜１００の乱数と比べる。
+		Random rand = new Random();
+		int num = rand.nextInt(100);
+		boolean notBlockFlag = false;
+		int action = 2;
+		if (num < 100 * epsilon)
+			action = max;
+		else {
+			while (!notBlockFlag) {
+				int randAction = rand.nextInt(4);
+				action = randAction;
+				if (judgeBlockByAction(action, mazeData, x, y))
+					notBlockFlag = true;
+			}
+		}
+		return action;
+	}
+	
+//	public int selectAction(int state, double epsilon) {
+//
+//		int max = 0;
+//		for (int i = 1; i < qTable[state].length; i++) {
+//			if (qTable[state][i] >= qTable[state][max]) {
+//					max = i;
+//			}
+//		}
+//		// 100*epsilonで１〜１００の乱数と比べる。
+//		Random rand = new Random();
+//		int num = rand.nextInt(100);
+//
+//		if (num < 100 * epsilon)
+//			return max;
+//		else {
+//				int randAction = rand.nextInt(4);
+//				return randAction;
+//		}
+//	}
+
+	private boolean judgeBlockByAction(int action, MazeData mazeData, int x, int y) {
+		if (action == 2)
+			if (mazeData.get(x + 1, y) != MazeData.BLOCK)
+				return true;
+		if (action == 1)
+			if (mazeData.get(x, y + 1) != MazeData.BLOCK)
+				return true;
+		if (action == 0)
+			if (mazeData.get(x, y - 1) != MazeData.BLOCK)
+				return true;
+		if (action == 3)
+			if (mazeData.get(x - 1, y) != MazeData.BLOCK)
+				return true;
+
+		return false;
 	}
 
 	/**
@@ -65,6 +122,14 @@ public class QLearning {
 	public void update(int before, int action, int after, double reward) {
 		qTable[before][action] = qTable[before][action]
 				+ ((reward + qTable[after][selectAction(after)] - qTable[before][action]));
+
+		System.out.println("/////////////////////////");
+		for (int i = 0; i < qTable.length; i++) {
+			for (int j = 0; j < qTable[i].length; j++) {
+				System.out.print(qTable[i][j] + " ");
+			}
+			System.out.println();
+		}
 	}
 
 	// フィールド
