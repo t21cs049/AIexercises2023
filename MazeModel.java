@@ -23,10 +23,10 @@ public class MazeModel implements Runnable {
 	public void run() {
 		try {
 			// step 1: Q学習する
-			QLearning q1 = new QLearning(16, 4, 1, 1);
+			QLearning q1 = new QLearning(16, 4, 0.5, 0.5);
 
-			int trials = 500; // 強化学習の試行回数
-			int steps = 100; // １試行あたりの最大ステップ数
+			int trials = 100; // 強化学習の試行回数
+			int steps = 1000; // １試行あたりの最大ステップ数
 			for (int t = 1; t <= trials; t++) { // 試行回数だけ繰り返し
 				/* ロボットを初期位置に戻す */
 				robot.setX(mazeData.getSX());
@@ -46,10 +46,12 @@ public class MazeModel implements Runnable {
 					int after = judgeState(x, y);
 					int reward = judgeReward(x, y);
 					/* Q 値を更新 */
+					System.out.println("s:" + s + " t:" + t);
 					q1.update(state, action, after, reward);
+					
 					/* もし時間差分誤差が十分小さくなれば終了 */
-					if (reward == q1.getQTable(after, action))
-						break;
+//					if ( == q1.getQTable(after, action))
+//						break;
 				}
 			}
 			// step 2: 学習したQテーブルの最適政策に基づいて
@@ -93,18 +95,17 @@ public class MazeModel implements Runnable {
 			left = 1;
 
 		if (mazeData.get(x, y) == MazeData.BLOCK)
-			return -10;
+			return -100;
 		
 		int gx = mazeData.getGX();
 		int gy = mazeData.getGY();
 		
-//		int num;
 		if (right == 1 && down == 1)
 			return -1;
 		if (right + left + down + up >= 3)
 			return -5;
 		
-		return 10 / ((int) Math.sqrt(Math.pow(gx-x,2)+Math.pow(gy-y,2)) + 1);
+		return 300 / ((int) Math.sqrt(Math.pow(gx-x,2)+Math.pow(gy-y,2)) + 1);
 
 		
 //			if (right == 1 && down == 1)
