@@ -74,10 +74,10 @@ public class MazeModel implements Runnable {
 			int x = robot.getX();
 			int y = robot.getY();
 			while (true) {
-				x = robot.getX();
-				y = robot.getY();
 				// ロボットの位置座標を更新
 				judgeAction(q1.selectAction(judgeState(x, y)), robot);
+				x = robot.getX();
+				y = robot.getY();
 				// 現在の状態を描画する
 				mazeView.repaint();
 				// 速すぎるので 500msec 寝る
@@ -85,7 +85,7 @@ public class MazeModel implements Runnable {
 				// デバッグ用に現在位置を出力
 				System.out.println("x = " + x + ", y = " + y);
 				// もしゴールに到達すれば終了
-				if (mazeData.get(x, y) == MazeData.GOAL)
+				if (mazeData.get(x, y) == MazeData.GOAL) 
 					break;
 			}
 		} catch (Exception e) {
