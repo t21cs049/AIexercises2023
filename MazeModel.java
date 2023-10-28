@@ -1,4 +1,7 @@
 import java.io.*;
+import java.util.IllegalFormatWidthException;
+
+import javax.swing.tree.FixedHeightLayoutCache;
 
 /**
  * 強化学習によりゴールまでの経路を学習するクラス
@@ -13,6 +16,10 @@ public class MazeModel implements Runnable {
 	public MazeModel(String mazeFile) {
 		// 迷路データを生成
 		mazeData = new MazeData(mazeFile);
+		height = mazeData.getHeight();
+		width = mazeData.getWidth();
+		statesNumber = height*width;
+		actionNumber = 4;
 		// ロボットを生成
 		robot = new Robot(mazeData.getSX(), mazeData.getSY());
 	}
@@ -23,7 +30,7 @@ public class MazeModel implements Runnable {
 	public void run() {
 		try {
 			// step 1: Q学習する
-			QLearning q1 = new QLearning(90, 4, 0.5, 0.5);
+			QLearning q1 = new QLearning(statesNumber, actionNumber, 0.5, 0.5);
 
 			int trials = 100; // 強化学習の試行回数
 			int steps = 500; // １試行あたりの最大ステップ数
@@ -31,7 +38,7 @@ public class MazeModel implements Runnable {
 				/* ロボットを初期位置に戻す */
 				robot.setX(mazeData.getSX());
 				robot.setY(mazeData.getSY());
-				int beforeQTable[][] = new int[90][4];
+				int beforeQTable[][] = new int[statesNumber][actionNumber];
 				for (int i = 0; i < beforeQTable.length; i++) {
 					for (int j = 0; j < beforeQTable[i].length; j++) {
 						beforeQTable[i][j] = 10000;
@@ -109,9 +116,9 @@ public class MazeModel implements Runnable {
 	}
 
 	private void judgeAction(int action, Robot robot) {
-		if (action == 2 && robot.getX() + 1 <= 8)
+		if (action == 2 && robot.getX() + 1 <= width-1)
 			robot.setX(robot.getX() + 1);
-		if (action == 1 && robot.getY() + 1 <= 9)
+		if (action == 1 && robot.getY() + 1 <= height-1)
 			robot.setY(robot.getY() + 1);
 		if (action == 0 && robot.getY() - 1 >= 0)
 			robot.setY(robot.getY() - 1);
@@ -155,4 +162,8 @@ public class MazeModel implements Runnable {
 
 	/** 描画用オブジェクト */
 	private MazeView mazeView = null;
+	private int height;
+	private int width;
+	private int statesNumber;
+	private int actionNumber;
 }
