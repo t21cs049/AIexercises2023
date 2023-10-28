@@ -31,11 +31,13 @@ public class QLearning {
 	 * @return 選択された行動番号
 	 */
 	public int selectAction(int state, double epsilon) {
-		int max = 0;
-		int action = 2;
+		int action;
 		Random rand = new Random();
-		int k = rand.nextInt(4);
-		max = k;
+		//最初に設定する借りの最大値はランダムに設定する
+		//これにより値が等しいQ値が複数あったとしても、特定の方向だけ選択するというような事を防いでいる。
+		int max = rand.nextInt(4);
+		//maxはQ値が最大である行動を示している
+		//行動４つに対するQ値の中から最大値を見つける
 		for (int i = 1; i < qTable[state].length; i++) {
 			if (qTable[state][i] >= qTable[state][max]) {
 				max = i;
@@ -46,85 +48,13 @@ public class QLearning {
 		if (num < 100 * epsilon)
 			action = max;
 		else {
+			//一定の確率でランダムに行動を選択する
 			int randAction = rand.nextInt(4);
 			action = randAction;
 		}
+		//行動を表す番号を返す
 		return action;
 	}
-//	public int selectAction(int state, double epsilon, MazeData mazeData, int x, int y) {
-//		int max = 0;
-//		boolean notBlockFlag = false;
-//		int action = 2;
-//		Random rand = new Random();
-//		int k;
-//		//while (!notBlockFlag) {
-//		for (k = 0; k < 4; k++) {
-//			if (judgeBlockByAction(k, mazeData, x, y)) {
-//				break;
-//				//notBlockFlag = true;
-//				//max = i;
-//			}
-//		}
-//		max = k; 
-//		//}
-//		for (int i = 1; i < qTable[state].length; i++) {
-//			if (qTable[state][i] >= qTable[state][max]) {
-//				if (judgeBlockByAction(i, mazeData, x, y))
-//					max = i;
-//			}
-//		}
-//		// 100*epsilonで１〜１００の乱数と比べる。
-//		int num = rand.nextInt(100);
-//		if (num < 100 * epsilon)
-//			action = max;
-//		else {
-//			while (!notBlockFlag) {
-//				int randAction = rand.nextInt(4);
-//				action = randAction;
-//				if (judgeBlockByAction(action, mazeData, x, y))
-//					notBlockFlag = true;
-//			}
-//		}
-//		return action;
-//	}
-
-//	public int selectAction(int state, double epsilon) {
-//
-//		int max = 0;
-//		for (int i = 1; i < qTable[state].length; i++) {
-//			if (qTable[state][i] >= qTable[state][max]) {
-//					max = i;
-//			}
-//		}
-//		// 100*epsilonで１〜１００の乱数と比べる。
-//		Random rand = new Random();
-//		int num = rand.nextInt(100);
-//
-//		if (num < 100 * epsilon)
-//			return max;
-//		else {
-//				int randAction = rand.nextInt(4);
-//				return randAction;
-//		}
-//	}
-
-//	private boolean judgeBlockByAction(int action, MazeData mazeData, int x, int y) {
-//		// System.out.println("x:" + x + "y:" + y +"action" + action);
-//		if (action == 2)
-//			if (mazeData.get(x + 1, y) != MazeData.BLOCK)
-//				return true;
-//		if (action == 1)
-//			if (mazeData.get(x, y + 1) != MazeData.BLOCK)
-//				return true;
-//		if (action == 0)
-//			if (mazeData.get(x, y - 1) != MazeData.BLOCK)
-//				return true;
-//		if (action == 3)
-//			if (mazeData.get(x - 1, y) != MazeData.BLOCK)
-//				return true;
-//
-//		return false;
-//	}
 
 	/**
 	 * Greedy 法により行動を選択する
@@ -132,6 +62,8 @@ public class QLearning {
 	 * @param state 現在の状態
 	 * @return 選択された行動番号
 	 */
+	//最終的なｑＴａｂｌｅの値を参照して行動を純粋に選択するためのプログラム
+	//最大値を例外なく選択するように作成
 	public int selectAction(int state) {
 		int max = 0;
 		for (int i = 1; i < qTable[state].length; i++) {
@@ -151,9 +83,11 @@ public class QLearning {
 	 * @param reward 報酬
 	 */
 	public void update(int before, int action, int after, double reward) {
+		//時間差分方程式を計算する
 		qTable[before][action] = qTable[before][action]
 				+ (alpha * (reward + gamma * qTable[after][selectAction(after)] - qTable[before][action]));
-
+//デバック用コード　ｑＴｂａｌｅの内容をここで表示する。
+//デバック時以外は処理速度を遅くしてしまうので、非表示にする。
 //		System.out.println("/////////////////////////");
 //		for (int i = 0; i < qTable.length; i++) {
 //			System.out.print("S " + i + " : ");
@@ -169,7 +103,8 @@ public class QLearning {
 	private double alpha = 0;
 	private double gamma = 0;
 
-	public int getQTable(int state, int action) {
-		return (int) qTable[state][action];
+	//指定されたQTableの値を返す
+	public double getQTable(int state, int action) {
+		return qTable[state][action];
 	}
 }

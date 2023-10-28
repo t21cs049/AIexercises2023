@@ -16,9 +16,12 @@ public class MazeModel implements Runnable {
 	public MazeModel(String mazeFile) {
 		// 迷路データを生成
 		mazeData = new MazeData(mazeFile);
+		//読み取った迷路データの横、縦の長さを取得する
 		height = mazeData.getHeight();
 		width = mazeData.getWidth();
+		//状態数を計算する
 		statesNumber = height*width;
+		//行動の選択肢の数を設定する
 		actionNumber = 4;
 		// ロボットを生成
 		robot = new Robot(mazeData.getSX(), mazeData.getSY());
@@ -38,36 +41,51 @@ public class MazeModel implements Runnable {
 				/* ロボットを初期位置に戻す */
 				robot.setX(mazeData.getSX());
 				robot.setY(mazeData.getSY());
-				int beforeQTable[][] = new int[statesNumber][actionNumber];
+				//終了条件を判定する為に前回のQTbaleの更新前のデータを保持しておくTableを用意
+				double beforeQTable[][] = new double[statesNumber][actionNumber];
 				for (int i = 0; i < beforeQTable.length; i++) {
 					for (int j = 0; j < beforeQTable[i].length; j++) {
+						//QTableの初期値と比べたときに差が分かりやすく大きくするために１００００で初期化する
 						beforeQTable[i][j] = 10000;
 					}
 				}
+				//更新前のQ値と更新後のQ値の誤差が小さくなった回数を１エピソード毎に数えるための変数
 				int CountInSameQ = 0;
 				for (int s = 0; s < steps; s++) { // ステップ数だけ繰り返し
 					/* ε-Greedy 法により行動を選択 */
 					// ロボットの現在位置を取得
 					int x = robot.getX();
 					int y = robot.getY();
+					//ロボットが今いる座標から状態情報を取得する
 					int state = judgeState(x, y);
+					//epsilonを設定する
 					double epsilon = 0.5;
+					//今のロボットの状態から適切な行動を選択する
 					int action = q1.selectAction(state, epsilon);
 					/* 選択した行動を実行 (ロボットを移動する) */
-					judgeAction(action, robot);
+					doAction(action, robot);
 					/* 新しい状態を観測＆報酬を得る */
+				    //更新した座標をx,yに反映する
 					x = robot.getX();
 					y = robot.getY();
+					//更新した後のロボットの座標における状態状態を取得する
 					int after = judgeState(x, y);
+					//選択した行動における報酬を報酬関数から得る
 					int reward = judgeReward(x, y);
 					/* Q 値を更新 */
-					System.out.println("s:" + s + " t:" + t);
+					
+					//デバック用：学習状況を分かりやすいように出力
+					//System.out.println("s:" + s + " t:" + t);
+					
+					//時間差分方程式によってQＴａｂｌｅを更新する
 					q1.update(state, action, after, reward);
 
 					/* もし時間差分誤差が十分小さくなれば終了 */
+					//ここでは更新後と更新前の差をとり誤差を調べている
 					if (beforeQTable[state][action] - q1.getQTable(state, action) < 5)
 						CountInSameQ++;
-
+					
+					//指定の回数だけ誤差が少なくなったら処理を終了する
 					if (CountInSameQ == 3)
 						break;
 				}
@@ -80,9 +98,10 @@ public class MazeModel implements Runnable {
 			// ゴール座標の取得
 			int x = robot.getX();
 			int y = robot.getY();
+			//ロボットがゴールにつくまで処理を行う
 			while (true) {
 				// ロボットの位置座標を更新
-				judgeAction(q1.selectAction(judgeState(x, y)), robot);
+				doAction(q1.selectAction(judgeState(x, y)), robot);
 				x = robot.getX();
 				y = robot.getY();
 				// 現在の状態を描画する
@@ -101,21 +120,28 @@ public class MazeModel implements Runnable {
 		}
 	}
 
+	//報酬関数を定義
 	private int judgeReward(int x, int y) {
-
+		//現在の座標がブロック上であれば、今後選択しないようにマイナスの大きい値を与える
 		if (mazeData.get(x, y) == MazeData.BLOCK)
 			return -100;
-
+		//現在の座標がゴール上であれば、ゴールへは最優先で向かってほしいため、非常に大きい正の値を与える
 		if (mazeData.get(x, y) == MazeData.GOAL)
 			return 10000;
 
+		//ゴールの座標を取得
 		int gx = mazeData.getGX();
 		int gy = mazeData.getGY();
 
+		//ゴールと現在位置のユークリッド距離から、ゴールに近ければ報酬は大きく、遠くなれば報酬は小さくなるような関数を設定
+		//分子の３００は報酬の大きさを調整
+		//分母の「＋１」は分母が０になることを防ぐため
 		return 300 / ((int) Math.sqrt(Math.pow(gx - x, 2) + Math.pow(gy - y, 2)) + 1);
 	}
 
-	private void judgeAction(int action, Robot robot) {
+	//選択された行動に応じたロボットの座標更新を行う
+	private void doAction(int action, Robot robot) {
+		//マップの外の座標に更新しないように設定
 		if (action == 2 && robot.getX() + 1 <= width-1)
 			robot.setX(robot.getX() + 1);
 		if (action == 1 && robot.getY() + 1 <= height-1)
@@ -126,6 +152,7 @@ public class MazeModel implements Runnable {
 			robot.setX(robot.getX() - 1);
 	}
 
+	//マップ上の座標を一意の状態に対応付ける為の関数
 	private int judgeState(int x, int y) {
 		return 9 * y + x;
 	}
@@ -162,6 +189,7 @@ public class MazeModel implements Runnable {
 
 	/** 描画用オブジェクト */
 	private MazeView mazeView = null;
+	//迷路データから得た細かい情報
 	private int height;
 	private int width;
 	private int statesNumber;
